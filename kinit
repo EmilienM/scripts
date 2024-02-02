@@ -1,0 +1,21 @@
+#!/bin/bash
+
+KERBEROS_SECRET_NAME="Kerberos"
+
+host ldap.corp.redhat.com >/dev/null 2>&1 || { 
+  echo "Must be connected to the Red Hat VPN first" 2>&1
+  exit 1
+}
+
+# If secret does not exist in default keyring, create it
+secret-tool search label $KERBEROS_SECRET_NAME 2>&1 | \
+  grep attribute.label >/dev/null 2>&1 || \
+  secret-tool store --label="$KERBEROS_SECRET_NAME" \
+    label $KERBEROS_SECRET_NAME \
+    uuid $(uuidgen) created "$(date)"
+
+# Get the value of the secret from the keyring
+secret-tool lookup label $KERBEROS_SECRET_NAME | /usr/bin/kinit >/dev/null
+
+# Output list of kerberos tickets
+/usr/bin/klist

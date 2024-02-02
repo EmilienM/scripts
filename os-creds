@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+import os
+import subprocess
+import sys
+import yaml
+
+
+# https://docs.openstack.org/openstacksdk/latest/user/config/configuration.html
+# The keys are all of the keys you’d expect from OS_* - except lower case and
+# without the OS prefix. So, region name is set with region_name.
+def parse_key(clouds_key, clouds_value):
+    if clouds_key == 'auth':
+        for k in clouds_value:
+            parse_key(k, clouds_value[k])
+    elif not clouds_key == 'regions':
+        os.putenv('OS_' + clouds_key.upper(), str(clouds_value))
+
+
+def find_clouds_yaml(filename):
+    if os.path.exists(filename):
+        return filename
+    file_path = os.path.join(os.environ.get('HOME'), '.config', 'openstack', filename)
+    if os.path.exists(file_path):
+        return file_path
+    file_path = os.path.join('/etc', 'openstack', filename)
+    if os.path.exists(file_path):
+        return file_path
+
+    print("Could not find %s" % filename)
+    exit()
+
+
+if len(sys.argv) < 2:
+    print("You need to pass a command. For instance: %s nova list" % sys.argv[0])
+    exit()
+
+cloud = os.environ.get('OS_CLOUD')
+if not cloud:
+    print("OS_CLOUD isn't set. Export your cloud environment with OS_CLOUD.")
+    exit()
+
+# TODO Also load secure.yaml
+config_file = os.environ.get('OS_CLIENT_CONFIG_FILE', find_clouds_yaml('clouds.yaml'))
+with open(config_file) as f:
+    data = yaml.safe_load(f)
+    if not data.get('clouds', []).get(cloud):
+        print("Cloud %s doesn't exist in clouds.yaml" % cloud)
+        exit()
+    for k in data['clouds'][cloud]:
+        parse_key(k, data['clouds'][cloud][k])
+
+# Call everything that was passed on the command line
+try:
+    subprocess.check_call(sys.argv[1:])
+except subprocess.CalledProcessError as e:
+    print(e.output)
+    exit(e.returncode)
