@@ -49,6 +49,16 @@ function install_tilt {
 	cd .. && rm -rf tilt
 }
 
+function install_kubecolor {
+	git clone https://github.com/kubecolor/kubecolor && cd kubecolor
+	latest_tag=$(gh release list | grep -m1 Latest | awk '{print $3}')
+	fileversion=$(echo $latest_tag | cut -c 2-)
+	wget https://github.com/kubecolor/kubecolor/releases/download/$latest_tag/kubecolor_${fileversion}_linux_amd64.tar.gz
+	tar xf kubecolor_${fileversion}_linux_amd64.tar.gz
+	mv kubecolor ../bin
+	cd .. && rm -rf kubecolor
+}
+
 function install_hwatch {
 	cargo install hwatch
 }
@@ -74,6 +84,7 @@ install_hwatch
 install_kind
 install_envsubst
 install_ctlptl
+install_kubecolor
 
 chmod +x bin/*
 mv bin/* ~/.local/bin
