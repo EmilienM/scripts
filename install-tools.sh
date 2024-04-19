@@ -4,7 +4,7 @@ trap "rm -rf $TMP_DIR" EXIT
 
 TMP_DIR=$(mktemp -d)
 cd $TMP_DIR
-mkdir bin
+mkdir out
 
 function install_bw {
 	git clone https://github.com/bitwarden/clients && cd clients
@@ -12,7 +12,7 @@ function install_bw {
 	fileversion=$(echo $latest_tag | cut -c 6-)
 	wget https://github.com/bitwarden/clients/releases/download/$latest_tag/bw-linux-$fileversion.zip
 	unzip bw-linux-$fileversion.zip
-	mv bw ../bin
+	mv bw ../out
 	cd .. && rm -rf clients
 }
 
@@ -24,7 +24,7 @@ function install_k9s {
 	mkdir k9s && cd k9s
 	wget https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz
 	tar -xvf k9s_Linux_amd64.tar.gz
-	mv k9s ../bin
+	mv k9s ../out
 	cd .. && rm -rf k9s
 }
 
@@ -35,7 +35,7 @@ function install_kustomize {
 	rm -rf kustomize
 	wget https://github.com/kubernetes-sigs/kustomize/releases/download/$latest_tag/kustomize_${fileversion}_linux_amd64.tar.gz
 	tar xf kustomize_${fileversion}_linux_amd64.tar.gz
-	mv kustomize ../bin
+	mv kustomize ../out
 	cd .. && rm -rf kustomize
 }
 
@@ -45,7 +45,7 @@ function install_tilt {
 	fileversion=$(echo $latest_tag | cut -c 2-)
 	wget https://github.com/tilt-dev/tilt/releases/download/$latest_tag/tilt.$fileversion.linux.x86_64.tar.gz
 	tar xf tilt.$fileversion.linux.x86_64.tar.gz
-	mv tilt ../bin
+	mv tilt ../out
 	cd .. && rm -rf tilt
 }
 
@@ -55,7 +55,7 @@ function install_kubecolor {
 	fileversion=$(echo $latest_tag | cut -c 2-)
 	wget https://github.com/kubecolor/kubecolor/releases/download/$latest_tag/kubecolor_${fileversion}_linux_amd64.tar.gz
 	tar xf kubecolor_${fileversion}_linux_amd64.tar.gz
-	mv kubecolor ../bin
+	mv kubecolor ../out
 	cd .. && rm -rf kubecolor
 }
 
@@ -86,5 +86,5 @@ install_envsubst
 install_ctlptl
 install_kubecolor
 
-chmod +x bin/*
-mv bin/* ~/.local/bin
+chmod +x $TMP_DIR/out/*
+cp $TMP_DIR/out/* ~/.local/bin
