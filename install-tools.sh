@@ -3,12 +3,13 @@
 trap "rm -rf $TMP_DIR" EXIT
 
 TMP_DIR=$(mktemp -d)
+echo "TMP_DIR: $TMP_DIR"
 cd $TMP_DIR
 mkdir out
 
 function install_bw {
 	git clone https://github.com/bitwarden/clients && cd clients
-	latest_tag=$(gh release list | grep -m1 CLI | awk '{print $4}')
+	latest_tag=$(gh release list | grep -m1 CLI | awk '{print $3}')
 	fileversion=$(echo $latest_tag | cut -c 6-)
 	wget https://github.com/bitwarden/clients/releases/download/$latest_tag/bw-linux-$fileversion.zip
 	unzip bw-linux-$fileversion.zip
@@ -17,7 +18,7 @@ function install_bw {
 }
 
 function install_clusterctl {
-	curl -L https://github.com/kubernetes-sigs/cluster-api/releases/latest/download/clusterctl-linux-amd64 -o bin/clusterctl
+	curl -L https://github.com/kubernetes-sigs/cluster-api/releases/latest/download/clusterctl-linux-amd64 -o out/clusterctl
 }
 
 function install_k9s {
