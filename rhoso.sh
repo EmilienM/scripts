@@ -1,4 +1,6 @@
 #!/bin/bash
+# Apply what's documented here: https://github.com/openstack-k8s-operators/install_yamls/tree/main?tab=readme-ov-file#deploy-dev-env-using-crc-edpm-nodes-with-isolated-networks
+#
 # Script to execute from your local machine to deploy CRC and OpenStack.
 # Requires the following:
 # - SSH access to the remote server
