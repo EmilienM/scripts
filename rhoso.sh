@@ -47,9 +47,14 @@ sleep 20m
 DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy
 sudo iptables -D LIBVIRT_FWO 3
 sudo iptables -D LIBVIRT_FWI 3
+oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
 EOF
 
+scp $REMOTE_USER@$REMOTE_SERVER:/tmp/rhoso.crt ~/.config/openstack/rhoso.crt
+
 # here you need to handle clouds.yaml manually for now
+echo "Update clouds.yaml and cacert [press ENTER once done]"
+read
 export OS_CLOUD=rhoso
 openstack project create shiftstack
 openstack user create --project shiftstack --password secrete shiftstack
