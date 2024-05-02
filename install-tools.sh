@@ -7,6 +7,14 @@ echo "TMP_DIR: $TMP_DIR"
 cd $TMP_DIR
 mkdir out
 
+function install_oc {
+	mkdir oc && cd oc
+	wget https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
+	tar xf openshift-client-linux.tar.gz
+	mv oc ../out
+	cd .. && rm -rf oc
+}
+
 function install_bw {
 	git clone https://github.com/bitwarden/clients && cd clients
 	latest_tag=$(gh release list | grep -m1 CLI | awk '{print $3}')
@@ -76,6 +84,7 @@ function install_ctlptl {
 	go install github.com/tilt-dev/ctlptl/cmd/ctlptl@latest
 }
 
+install_oc
 install_bw
 install_clusterctl
 install_k9s
