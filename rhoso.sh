@@ -25,29 +25,58 @@ $SSH_CMD "sudo dnf install -y ansible make python-pip"
 
 # Clone install_yamls
 $SSH_CMD "git clone https://github.com/openstack-k8s-operators/install_yamls.git"
+$SSH_CMD "git clone https://github.com/openstack-k8s-operators/cinder-operator.git"
+$SSH_CMD "git clone https://github.com/openstack-k8s-operators/octavia-operator.git"
 
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
 
 # Run this block through SSH
 $SSH_CMD << 'EOF'
-cd install_yamls/devsetup
+cd ~/install_yamls/devsetup
 make download_tools
 CPUS=12 MEMORY=25600 DISK=100 make crc
 eval $(crc oc-env)
 oc login -u kubeadmin -p 12345678 https://api.crc.testing:6443
+echo 'export PATH="/home/stack/.crc/bin/oc:$PATH"' >> ~/.bashrc
 make crc_attach_default_interface
 EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=200 EDPM_TOTAL_NODES=1 make edpm_compute 
 cd ..
-make crc_storage
-make input
-make openstack
-make openstack_deploy
+make crc_storage openstack
+TIMEOUT=300 make ceph
+make openstack_deploy_prep
+cp out/operator/openstack-operator/config/samples/core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml .
+yq -i '.spec.cinder.template.cinderVolumes.ceph.replicas = 1' ./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml
+sed -i '/rbd_secret_uuid=_FSID_/d'
+OPENSTACK_CR=./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml make openstack_deploy
 sleep 20m
+oc patch -n openstack openstackcontrolplane openstack-network-isolation-ceph --type=merge --patch '
+spec:
+  ovn:
+    template:
+      ovnController:
+        nicMappings:
+          datacentre: ospbr
+          octavia: octbr
+  octavia:
+    enabled: true
+    template:
+      amphoraImageContainerImage: quay.io/gthiemonge/octavia-amphora-image
+      apacheContainerImage: registry.redhat.io/rhel8/httpd-24:latest
+      octaviaHousekeeping:
+        networkAttachments:
+          - octavia
+      octaviaHealthManager:
+        networkAttachments:
+          - octavia
+      octaviaWorker:
+        networkAttachments:
+          - octavia
+    '
 DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy
-sudo iptables -D LIBVIRT_FWO 3
-sudo iptables -D LIBVIRT_FWI 3
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
+cd devsetup
+make bmaas_route_crc_and_crc_bmaas_networks BMAAS_ROUTE_LIBVIRT_NETWORKS=default,crc
 EOF
 
 scp $REMOTE_USER@$REMOTE_SERVER:/tmp/rhoso.crt ~/.config/openstack/rhoso.crt
@@ -56,6 +85,9 @@ scp $REMOTE_USER@$REMOTE_SERVER:/tmp/rhoso.crt ~/.config/openstack/rhoso.crt
 echo "Update clouds.yaml and cacert [press ENTER once done]"
 read
 export OS_CLOUD=rhoso
+openstack volume type create ceph
+openstack volume type set --property volume_backend_name=ceph ceph
+
 openstack project create shiftstack
 openstack user create --project shiftstack --password secrete shiftstack
 openstack role add --user shiftstack --project shiftstack member
