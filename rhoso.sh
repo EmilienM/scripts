@@ -25,8 +25,6 @@ $SSH_CMD "sudo dnf install -y ansible make python-pip"
 
 # Clone install_yamls
 $SSH_CMD "git clone https://github.com/openstack-k8s-operators/install_yamls.git"
-$SSH_CMD "git clone https://github.com/openstack-k8s-operators/cinder-operator.git"
-$SSH_CMD "git clone https://github.com/openstack-k8s-operators/octavia-operator.git"
 
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
