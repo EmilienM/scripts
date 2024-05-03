@@ -47,7 +47,7 @@ TIMEOUT=300 make ceph
 make openstack_deploy_prep
 cp out/operator/openstack-operator/config/samples/core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml .
 yq -i '.spec.cinder.template.cinderVolumes.ceph.replicas = 1' ./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml
-sed -i '/rbd_secret_uuid=_FSID_/d'
+sed -i '/rbd_secret_uuid=_FSID_/d' ./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml
 OPENSTACK_CR=./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml make openstack_deploy
 sleep 20m
 oc patch -n openstack openstackcontrolplane openstack-network-isolation-ceph --type=merge --patch '
@@ -81,9 +81,6 @@ EOF
 
 scp $REMOTE_USER@$REMOTE_SERVER:/tmp/rhoso.crt ~/.config/openstack/rhoso.crt
 
-# here you need to handle clouds.yaml manually for now
-echo "Update clouds.yaml and cacert [press ENTER once done]"
-read
 export OS_CLOUD=rhoso
 openstack volume type create ceph
 openstack volume type set --property volume_backend_name=ceph ceph
@@ -110,3 +107,6 @@ openstack image show centos9-stream || wget https://cloud.centos.org/centos/9-st
 
 export OS_CLOUD=rhoso_shiftstack
 openstack keypair show default_key || openstack keypair create --public-key ~/.ssh/id_rsa.pub default_key
+
+echo
+echo "DONE..."
