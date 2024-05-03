@@ -9,7 +9,7 @@
 # - The remote server should have a user named "stack" with sudo privileges (can be changed in the script)
 # - A file named ~/.ocp-pull-secret.txt with the pull secret for OpenShift on your local machine
 
-set -x
+set -xe
 
 REMOTE_SERVER="foch.macchi.pro"
 REMOTE_USER="stack"
@@ -41,7 +41,7 @@ make crc_attach_default_interface
 EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=200 EDPM_TOTAL_NODES=1 make edpm_compute 
 cd ..
 make crc_storage openstack
-TIMEOUT=300 make ceph
+CEPH_TIMEOUT=300 make ceph
 make openstack_deploy_prep
 cp out/operator/openstack-operator/config/samples/core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml .
 yq -i '.spec.cinder.template.cinderVolumes.ceph.replicas = 1' ./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml
