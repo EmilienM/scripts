@@ -9,7 +9,7 @@
 # - The remote server should have a user named "stack" with sudo privileges (can be changed in the script)
 # - A file named ~/.ocp-pull-secret.txt with the pull secret for OpenShift on your local machine
 
-set -xe
+set -x
 
 REMOTE_SERVER="foch.macchi.pro"
 REMOTE_USER="stack"
@@ -29,6 +29,8 @@ $SSH_CMD "git clone https://github.com/openstack-k8s-operators/install_yamls.git
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
 
+sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
+
 # Run this block through SSH
 $SSH_CMD << 'EOF'
 cd ~/install_yamls/devsetup
@@ -41,7 +43,7 @@ make crc_attach_default_interface
 EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=200 EDPM_TOTAL_NODES=1 make edpm_compute 
 cd ..
 make crc_storage openstack
-CEPH_TIMEOUT=300 make ceph
+CEPH_TIMEOUT=300 CEPH_DATASIZE=10Gi make ceph
 make openstack_deploy_prep
 cp out/operator/openstack-operator/config/samples/core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml .
 yq -i '.spec.cinder.template.cinderVolumes.ceph.replicas = 1' ./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml
@@ -89,10 +91,13 @@ openstack role add --user shiftstack --project shiftstack member
 
 openstack flavor create --ram 32768 --disk 50 --vcpu 8 --public CPU_8_Memory_32768_Disk_50
 
-openstack quota set --cores 120 --fixed-ips -1 --injected-file-size -1 --injected-files -1 --instances -1 --key-pairs -1 --properties -1 --ram 450000 --gigabytes 4000 --server-groups -1 --server-group-members -1 --backups -1 --backup-gigabytes -1 --per-volume-gigabytes -1 --snapshots -1 --volumes -1 --floating-ips 80 --secgroup-rules -1 --secgroups -1 --networks -1 --subnets -1 --ports -1 --routers -1 --rbac-policies -1 --subnetpools -1 shiftstack
+openstack quota set --cores 120 --fixed-ips -1 --injected-file-size -1 --injected-files -1 --instances -1 --key-pairs -1 --properties -1 --ram 450000 --gigabytes 4000 --server-groups -1 --server-group-members -1 --backups -1 --backup-gigabytes -1 --per-volume-gigabytes -1 --snapshots -1 --volumes -1 --floating-ips 10 --secgroup-rules -1 --secgroups -1 --networks -1 --subnets -1 --ports -1 --routers -1 --rbac-policies -1 --subnetpools -1 shiftstack
 
 openstack network create public --external --provider-network-type flat --provider-physical-network datacentre
 openstack subnet create pub_sub --subnet-range 192.168.122.0/24 --allocation-pool start=192.168.122.200,end=192.168.122.210 --gateway 192.168.122.1 --no-dhcp --network public
+
+openstack floating ip create --floating-ip-address 192.168.122.200 --description "OCP API" --project shiftstack public
+openstack floating ip create --floating-ip-address 192.168.122.210 --description "OCP Ingress" --project shiftstack public
 
 openstack security group create allow_ssh --project shiftstack
 openstack security group rule create --protocol tcp --dst-port 22 --project shiftstack allow_ssh
