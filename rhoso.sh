@@ -40,7 +40,7 @@ eval $(crc oc-env)
 oc login -u kubeadmin -p 12345678 https://api.crc.testing:6443
 echo 'export PATH="/home/stack/.crc/bin/oc:$PATH"' >> ~/.bashrc
 make crc_attach_default_interface
-EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=200 EDPM_TOTAL_NODES=1 make edpm_compute 
+EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=230 EDPM_TOTAL_NODES=1 make edpm_compute 
 make bmaas_route_crc_and_crc_bmaas_networks BMAAS_ROUTE_LIBVIRT_NETWORKS=default,crc
 cd ..
 
