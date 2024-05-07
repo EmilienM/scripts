@@ -41,16 +41,12 @@ oc login -u kubeadmin -p 12345678 https://api.crc.testing:6443
 echo 'export PATH="/home/stack/.crc/bin/oc:$PATH"' >> ~/.bashrc
 make crc_attach_default_interface
 EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=200 EDPM_TOTAL_NODES=1 make edpm_compute 
+make bmaas_route_crc_and_crc_bmaas_networks BMAAS_ROUTE_LIBVIRT_NETWORKS=default,crc
 cd ..
-make crc_storage openstack
-CEPH_TIMEOUT=300 CEPH_DATASIZE=10Gi make ceph
-make openstack_deploy_prep
-cp out/operator/openstack-operator/config/samples/core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml .
-yq -i '.spec.cinder.template.cinderVolumes.ceph.replicas = 1' ./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml
-sed -i '/rbd_secret_uuid=_FSID_/d' ./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml
-OPENSTACK_CR=./core_v1beta1_openstackcontrolplane_network_isolation_ceph.yaml make openstack_deploy
+
+make crc_storage openstack openstack_deploy
 sleep 20m
-oc patch -n openstack openstackcontrolplane openstack-network-isolation-ceph --type=merge --patch '
+oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
   ovn:
     template:
@@ -75,21 +71,55 @@ spec:
     '
 DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
-cd devsetup
-make bmaas_route_crc_and_crc_bmaas_networks BMAAS_ROUTE_LIBVIRT_NETWORKS=default,crc
+
+# Install NFS server, until I can easily deploy Ceph
+sudo dnf -y install nfs-utils
+sudo mkdir /opt/cinder_nfs
+sudo echo "/opt/cinder_nfs 192.168.0.0/16(rw,no_root_squash)" >> /etc/exports
+sudo systemctl enable --now rpcbind nfs-server
+sudo systemctl stop firewalld
+wget https://raw.githubusercontent.com/openstack-k8s-operators/cinder-operator/main/config/samples/backends/nfs/cinder-volume-nfs-secrets.yaml -O /tmp/cinder-volume-nfs-secrets.yaml
+NFS_HOST=$(hostname)
+sed -i 's/192.168.130.1/$NFS_HOST/g' /tmp/cinder-volume-nfs-secrets.yaml
+oc create -f /tmp/cinder-volume-nfs-secrets.yaml
+oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
+spec:
+  cinder:
+    template:
+      cinderVolumes:
+        nfs:
+          customServiceConfig: |
+            [nfs]
+            volume_backend_name=nfs
+            volume_driver=cinder.volume.drivers.nfs.NfsDriver
+            nfs_snapshot_support=true
+            nas_secure_file_operations=false
+            nas_secure_file_permissions=false
+          customServiceConfigSecrets:
+          - cinder-volume-nfs-secrets
+          networkAttachments:
+          - storage
+          replicas: 1
+          resources: {}
+    '
 EOF
 
 scp $REMOTE_USER@$REMOTE_SERVER:/tmp/rhoso.crt ~/.config/openstack/rhoso.crt
 
 export OS_CLOUD=rhoso
-openstack volume type create ceph
-openstack volume type set --property volume_backend_name=ceph ceph
+openstack volume type create nfs
+openstack volume type set --property volume_backend_name=nfs nfs
 
 openstack project create shiftstack
 openstack user create --project shiftstack --password secrete shiftstack
 openstack role add --user shiftstack --project shiftstack member
 
 openstack flavor create --ram 32768 --disk 50 --vcpu 8 --public CPU_8_Memory_32768_Disk_50
+openstack flavor create --ram 1024 --disk 10 --vcpu 1 --ephemeral 1 --public m1.tiny
+openstack flavor create --ram 2048 --disk 15 --vcpu 1 --ephemeral 1 --public m1.small
+openstack flavor create --ram 4096 --disk 20 --vcpu 2 --ephemeral 2 --public m1.medium
+openstack flavor create --ram 8192 --disk 25 --vcpu 4 --ephemeral 5 --public m1.large
+openstack flavor create --ram 16384 --disk 40 --vcpu 4 --ephemeral 10 --public m1.xlarge
 
 openstack quota set --cores 120 --fixed-ips -1 --injected-file-size -1 --injected-files -1 --instances -1 --key-pairs -1 --properties -1 --ram 450000 --gigabytes 4000 --server-groups -1 --server-group-members -1 --backups -1 --backup-gigabytes -1 --per-volume-gigabytes -1 --snapshots -1 --volumes -1 --floating-ips 10 --secgroup-rules -1 --secgroups -1 --networks -1 --subnets -1 --ports -1 --routers -1 --rbac-policies -1 --subnetpools -1 shiftstack
 
