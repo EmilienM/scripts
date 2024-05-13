@@ -3,14 +3,14 @@ set -e
 
 tmp_dir=$(mktemp -d)
 
-export OS_CLOUD=rhoso_openshift
+export OS_CLOUD=rhoso_shiftstack
 export CLUSTER_NAME="dev"
 export KUBERNETES_VERSION="v1.28.5"
 export CAPO_DIRECTORY=~/go/src/github.com/kubernetes-sigs/cluster-api-provider-openstack
 export CONTROL_PLANE_MACHINE_COUNT=3
 export WORKER_MACHINE_COUNT=3
 
-export OPENSTACK_SSH_KEY_NAME="emilien"
+export OPENSTACK_SSH_KEY_NAME="default_key"
 export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_NODE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_FAILURE_DOMAIN="nova"
@@ -27,6 +27,12 @@ then
 fi
 if ! systemctl is-active --user --quiet podman.socket; then
   systemctl --user start podman.socket
+fi
+
+if ! command -v yq &> /dev/null
+then
+    echo "yq could not be found, installing it"
+    sudo dnf install -y yq
 fi
 
 if ! command -v helm &> /dev/null
