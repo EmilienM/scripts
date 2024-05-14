@@ -48,6 +48,8 @@ make crc_storage openstack openstack_deploy
 sleep 20m
 oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
+  horizon:
+    enabled: true
   ovn:
     template:
       ovnController:
@@ -69,7 +71,7 @@ spec:
         networkAttachments:
           - octavia
     '
-DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy
+DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy || true
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
 
 # Install NFS server, until I can easily deploy Ceph
@@ -80,7 +82,7 @@ sudo systemctl enable --now rpcbind nfs-server
 sudo systemctl stop firewalld
 wget https://raw.githubusercontent.com/openstack-k8s-operators/cinder-operator/main/config/samples/backends/nfs/cinder-volume-nfs-secrets.yaml -O /tmp/cinder-volume-nfs-secrets.yaml
 NFS_HOST=$(hostname)
-sed -i 's/192.168.130.1/$NFS_HOST/g' /tmp/cinder-volume-nfs-secrets.yaml
+sed -i "s/192.168.130.1/${NFS_HOST}/g" /tmp/cinder-volume-nfs-secrets.yaml
 oc create -f /tmp/cinder-volume-nfs-secrets.yaml
 oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
