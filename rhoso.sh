@@ -80,9 +80,11 @@ sudo mkdir /opt/cinder_nfs
 echo "/opt/cinder_nfs 192.168.0.0/16(rw,no_root_squash)" | sudo tee -a /etc/exports
 sudo systemctl enable --now rpcbind nfs-server
 sudo systemctl stop firewalld
+sudo dnf install -y wget
 wget https://raw.githubusercontent.com/openstack-k8s-operators/cinder-operator/main/config/samples/backends/nfs/cinder-volume-nfs-secrets.yaml -O /tmp/cinder-volume-nfs-secrets.yaml
 NFS_HOST=$(hostname)
 sed -i "s/192.168.130.1/${NFS_HOST}/g" /tmp/cinder-volume-nfs-secrets.yaml
+set -i "s/'/var/nfs/cinder'/'/opt/cinder_nfs'/g" /tmp/cinder-volume-nfs-secrets.yaml
 oc create -f /tmp/cinder-volume-nfs-secrets.yaml
 oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
