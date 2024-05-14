@@ -75,7 +75,7 @@ oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2
 # Install NFS server, until I can easily deploy Ceph
 sudo dnf -y install nfs-utils
 sudo mkdir /opt/cinder_nfs
-sudo echo "/opt/cinder_nfs 192.168.0.0/16(rw,no_root_squash)" >> /etc/exports
+echo "/opt/cinder_nfs 192.168.0.0/16(rw,no_root_squash)" | sudo tee -a /etc/exports
 sudo systemctl enable --now rpcbind nfs-server
 sudo systemctl stop firewalld
 wget https://raw.githubusercontent.com/openstack-k8s-operators/cinder-operator/main/config/samples/backends/nfs/cinder-volume-nfs-secrets.yaml -O /tmp/cinder-volume-nfs-secrets.yaml
