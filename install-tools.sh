@@ -30,11 +30,7 @@ function install_clusterctl {
 }
 
 function install_k9s {
-	mkdir k9s && cd k9s
-	wget https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz
-	tar -xvf k9s_Linux_amd64.tar.gz
-	mv k9s ../out
-	cd .. && rm -rf k9s
+	sudo dnf install -y https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.rpm
 }
 
 function install_kustomize {

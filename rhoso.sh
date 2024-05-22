@@ -31,7 +31,6 @@ scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pu
 
 sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
 
-# Run this block through SSH
 $SSH_CMD << 'EOF'
 cd ~/install_yamls/devsetup
 make download_tools
@@ -71,7 +70,11 @@ spec:
         networkAttachments:
           - octavia
     '
-DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy || true
+EOF
+
+$SSH_CMD DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy || true
+
+$SSH_CMD << 'EOF'
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
 
 # Install NFS server, until I can easily deploy Ceph
@@ -84,7 +87,7 @@ sudo dnf install -y wget
 wget https://raw.githubusercontent.com/openstack-k8s-operators/cinder-operator/main/config/samples/backends/nfs/cinder-volume-nfs-secrets.yaml -O /tmp/cinder-volume-nfs-secrets.yaml
 NFS_HOST=$(hostname)
 sed -i "s/192.168.130.1/${NFS_HOST}/g" /tmp/cinder-volume-nfs-secrets.yaml
-set -i "s/'/var/nfs/cinder'/'/opt/cinder_nfs'/g" /tmp/cinder-volume-nfs-secrets.yaml
+sed -i "s/\/var\/nfs\/cinder/\/opt\/cinder_nfs/g" /tmp/cinder-volume-nfs-secrets.yaml
 oc create -f /tmp/cinder-volume-nfs-secrets.yaml
 oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
