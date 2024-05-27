@@ -4,7 +4,7 @@ set -e
 tmp_dir=$(mktemp -d)
 
 export OS_CLOUD=rhoso_shiftstack
-export CLUSTER_NAME="dev"
+export CLUSTER_NAME="dev-test"
 export KUBERNETES_VERSION="v1.28.5"
 export CAPO_DIRECTORY=~/go/src/github.com/kubernetes-sigs/cluster-api-provider-openstack
 export CONTROL_PLANE_MACHINE_COUNT=3
@@ -74,4 +74,13 @@ metadata:
   labels:
     clusterctl.cluster.x-k8s.io/move: "true"
   name: ${CLUSTER_NAME}-cloud-config
+EOF
+
+sed -i '/OPENSTACK_EXTERNAL_NETWORK_ID/d' ~/go/src/github.com/kubernetes-sigs/cluster-api/tilt-settings.yaml
+sed -i '/OPENSTACK_CLOUD_CACERT_B64/d' ~/go/src/github.com/kubernetes-sigs/cluster-api/tilt-settings.yaml
+sed -i '/OPENSTACK_CLOUD_YAML_B64/d' ~/go/src/github.com/kubernetes-sigs/cluster-api/tilt-settings.yaml
+cat <<EOF >> ~/go/src/github.com/kubernetes-sigs/cluster-api/tilt-settings.yaml
+  OPENSTACK_EXTERNAL_NETWORK_ID: "${OPENSTACK_EXTERNAL_NETWORK_ID}"
+  OPENSTACK_CLOUD_CACERT_B64: "${OPENSTACK_CLOUD_CACERT_B64}"
+  OPENSTACK_CLOUD_YAML_B64: "${OPENSTACK_CLOUD_YAML_B64}"
 EOF
