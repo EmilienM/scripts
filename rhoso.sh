@@ -23,6 +23,8 @@ $SSH_CMD "sudo dnf config-manager --set-enabled crb && sudo dnf install -y epel-
 # Install base packages for our needs
 $SSH_CMD "sudo dnf install -y ansible make python-pip"
 
+$SSH_CMD "sudo dnf install -y https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.rpm"
+
 # Clone install_yamls
 $SSH_CMD "git clone https://github.com/openstack-k8s-operators/install_yamls.git"
 
@@ -35,6 +37,10 @@ $SSH_CMD << 'EOF'
 cd ~/install_yamls/devsetup
 make download_tools
 CPUS=12 MEMORY=25600 DISK=100 make crc
+EOF
+
+$SSH_CMD << 'EOF'
+cd ~/install_yamls/devsetup
 eval $(crc oc-env)
 oc login -u kubeadmin -p 12345678 https://api.crc.testing:6443
 echo 'export PATH="/home/stack/.crc/bin/oc:$PATH"' >> ~/.bashrc
@@ -71,8 +77,7 @@ spec:
           - octavia
     '
 EOF
-
-$SSH_CMD DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m make edpm_wait_deploy || true
+$SSH_CMD DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m cd install_yamls && make edpm_wait_deploy || true
 
 $SSH_CMD << 'EOF'
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
@@ -146,7 +151,7 @@ openstack security group rule create --protocol ipv6-icmp --project shiftstack a
 openstack image show centos9-stream || wget https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 && openstack image create --public --disk-format qcow2 --file CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 centos9-stream && rm -f CentOS-Stream-*
 
 export OS_CLOUD=rhoso_shiftstack
-openstack keypair show default_key || openstack keypair create --public-key ~/.ssh/id_rsa.pub default_key
+openstack keypair show emacchi || openstack keypair create --public-key ~/.ssh/id_rsa.pub emacchi
 
 echo
 echo "DONE..."
