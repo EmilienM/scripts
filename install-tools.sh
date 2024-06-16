@@ -44,6 +44,13 @@ function install_kustomize {
 	cd .. && rm -rf kustomize
 }
 
+function install_rclone {
+	git clone https://github.com/rclone/rclone && cd rclone
+	latest_tag=$(gh release list | grep -m1 Latest | awk '{print $2}')
+	sudo dnf install -y https://github.com/rclone/rclone/releases/download/$latest_tag/rclone-$latest_tag-linux-amd64.rpm
+	cd .. && rm -rf rclone
+}
+
 function install_tilt {
 	git clone https://github.com/tilt-dev/tilt && cd tilt
 	latest_tag=$(gh release list | grep -m1 Latest | awk '{print $3}')
@@ -86,6 +93,7 @@ install_clusterctl
 install_k9s
 install_kustomize
 install_tilt
+install_rclone
 install_hwatch
 install_kind
 install_envsubst
