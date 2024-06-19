@@ -35,7 +35,7 @@ $SSH_CMD "rm -rf install_yamls && git clone https://github.com/openstack-k8s-ope
 
 # Workaround for the timeout
 # https://github.com/openstack-k8s-operators/install_yamls/pull/853
-$SSH_CMD "bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v'"
+$SSH_CMD "bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/858.patch | git apply -v'"
 
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
@@ -62,12 +62,14 @@ cd ..
 TIMEOUT=30m make crc_storage openstack_wait
 make input
 sleep 1m
-TIMEOUT=30m openstack_wait_deploy
+TIMEOUT=30m make openstack_wait_deploy
 
 oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
   horizon:
     enabled: true
+  telemetry:
+    enabled: false
   ovn:
     template:
       ovnController:
@@ -90,7 +92,7 @@ spec:
           - octavia
     '
 
-make edpm_wait_deploy || true
+DATAPLANE_TIMEOUT=45m make edpm_wait_deploy || true
 
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
 
