@@ -44,9 +44,7 @@ scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pu
 pkill sshuttle && sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
 
 # Create the RHOSO deployment script that will be executed on the remote server
-set +e
-rm -f /tmp/rhoso.sh
-cat << EOF >/tmp/rhoso.sh
+cat >/tmp/rhoso.sh <<'EOL'
 #!/bin/bash
 set -euo pipefail
 
@@ -125,8 +123,7 @@ spec:
           replicas: 1
           resources: {}
     '
-EOF
-set -e
+EOL
 scp /tmp/rhoso.sh $REMOTE_USER@$REMOTE_SERVER:~/rhoso.sh
 $SSH_CMD "bash ~/rhoso.sh |& tee -a ~/rhoso.log"
 
