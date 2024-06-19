@@ -41,7 +41,8 @@ $SSH_CMD "bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.c
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
 
 # sshuttle to access the remote networks
-pkill sshuttle && sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
+pkill sshuttle || true
+sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
 
 # Create the RHOSO deployment script that will be executed on the remote server
 cat >/tmp/rhoso.sh <<'EOL'
