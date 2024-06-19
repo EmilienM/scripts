@@ -15,7 +15,7 @@ REMOTE_SERVER="foch.macchi.pro"
 REMOTE_USER="stack"
 
 # SSH prefix command
-SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $REMOTE_USER@$REMOTE_SERVER"
+SSH_CMD="ssh -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $REMOTE_USER@$REMOTE_SERVER"
 
 # Install EPEL repository
 $SSH_CMD "sudo dnf config-manager --set-enabled crb && sudo dnf install -y epel-release epel-next-release"
@@ -26,7 +26,7 @@ $SSH_CMD "sudo dnf install -y ansible make python-pip"
 $SSH_CMD "sudo dnf install -y https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.rpm"
 
 # Clone install_yamls
-$SSH_CMD "git clone https://github.com/openstack-k8s-operators/install_yamls.git"
+$SSH_CMD "[ -d install_yamls ] || git clone https://github.com/openstack-k8s-operators/install_yamls.git"
 
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
@@ -149,6 +149,10 @@ openstack security group rule create --protocol icmp --project shiftstack allow_
 openstack security group rule create --protocol ipv6-icmp --project shiftstack allow_ping
 
 openstack image show centos9-stream || wget https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 && openstack image create --public --disk-format qcow2 --file CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 centos9-stream && rm -f CentOS-Stream-*
+
+openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.29.5.img ubuntu-2204-kube-v1.29.5
+openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.28.5.img ubuntu-2204-kube-v1.28.5
+openstack image create --disk-format raw --file ~/capo/cirros-0.6.1-x86_64-disk.img cirros-0.6.1-x86_64-disk
 
 export OS_CLOUD=rhoso_shiftstack
 openstack keypair show emacchi || openstack keypair create --public-key ~/.ssh/id_rsa.pub emacchi
