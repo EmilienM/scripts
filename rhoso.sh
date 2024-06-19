@@ -58,7 +58,6 @@ echo 'export PATH="/home/stack/.crc/bin/oc:$PATH"' >> ~/.bashrc
 make crc_attach_default_interface
 EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=230 EDPM_TOTAL_NODES=1 make edpm_compute 
 make bmaas_route_crc_and_crc_bmaas_networks BMAAS_ROUTE_LIBVIRT_NETWORKS=default,crc
-sudo iptables -t nat -A POSTROUTING -j MASQUERADE
 cd ..
 
 TIMEOUT=30m make crc_storage openstack_wait
@@ -95,6 +94,9 @@ spec:
     '
 
 DATAPLANE_TIMEOUT=45m make edpm_wait_deploy || true
+
+# I don't know why I have to do this but otherwise pods lost connectivity with outside
+sudo iptables -t nat -A POSTROUTING -j MASQUERADE
 
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
 
