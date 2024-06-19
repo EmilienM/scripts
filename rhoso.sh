@@ -31,11 +31,11 @@ $SSH_CMD "sudo dnf install -y ansible make python-pip"
 $SSH_CMD "sudo dnf install -y https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.rpm"
 
 # Clone install_yamls
-$SSH_CMD "[ -d install_yamls ] || git clone https://github.com/openstack-k8s-operators/install_yamls.git"
+$SSH_CMD "rm -rf install_yamls && git clone https://github.com/openstack-k8s-operators/install_yamls.git"
 
 # Workaround for the timeout
 # https://github.com/openstack-k8s-operators/install_yamls/pull/853
-$SSH_CMD "[ -d install_yamls ] || bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v'"
+$SSH_CMD "bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v'"
 
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
@@ -59,7 +59,10 @@ EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=230 EDPM_TOTAL_
 make bmaas_route_crc_and_crc_bmaas_networks BMAAS_ROUTE_LIBVIRT_NETWORKS=default,crc
 cd ..
 
-TIMEOUT=30m make crc_storage openstack_wait openstack_wait_deploy
+TIMEOUT=30m make crc_storage openstack_wait
+make input
+sleep 1m
+TIMEOUT=30m openstack_wait_deploy
 
 oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
