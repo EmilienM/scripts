@@ -9,7 +9,12 @@
 # - The remote server should have a user named "stack" with sudo privileges (can be changed in the script)
 # - A file named ~/.ocp-pull-secret.txt with the pull secret for OpenShift on your local machine
 
-set -x
+set -e
+
+if [ "$EUID" -eq 0 ]; then
+  echo "This script must not be run as root"
+  exit 1
+fi
 
 REMOTE_SERVER="foch.macchi.pro"
 REMOTE_USER="stack"
@@ -28,19 +33,26 @@ $SSH_CMD "sudo dnf install -y https://github.com/derailed/k9s/releases/latest/do
 # Clone install_yamls
 $SSH_CMD "[ -d install_yamls ] || git clone https://github.com/openstack-k8s-operators/install_yamls.git"
 
+# Workaround for the timeout
+# https://github.com/openstack-k8s-operators/install_yamls/pull/853
+$SSH_CMD "[ -d install_yamls ] || bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v'"
+
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
 
-sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
+# sshuttle to access the remote networks
+pkill sshuttle && sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
 
-$SSH_CMD << 'EOF'
+# Create the RHOSO deployment script that will be executed on the remote server
+set +e
+rm -f /tmp/rhoso.sh
+cat << EOF >/tmp/rhoso.sh
+#!/bin/bash
+set -euo pipefail
+
 cd ~/install_yamls/devsetup
 make download_tools
 CPUS=12 MEMORY=25600 DISK=100 make crc
-EOF
-
-$SSH_CMD << 'EOF'
-cd ~/install_yamls/devsetup
 eval $(crc oc-env)
 oc login -u kubeadmin -p 12345678 https://api.crc.testing:6443
 echo 'export PATH="/home/stack/.crc/bin/oc:$PATH"' >> ~/.bashrc
@@ -49,8 +61,8 @@ EDPM_COMPUTE_VCPUS=16 EDPM_COMPUTE_RAM=72 EDPM_COMPUTE_DISK_SIZE=230 EDPM_TOTAL_
 make bmaas_route_crc_and_crc_bmaas_networks BMAAS_ROUTE_LIBVIRT_NETWORKS=default,crc
 cd ..
 
-make crc_storage openstack openstack_deploy
-sleep 20m
+TIMEOUT=30m make crc_storage openstack_wait openstack_wait_deploy
+
 oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation --type=merge --patch '
 spec:
   horizon:
@@ -76,10 +88,9 @@ spec:
         networkAttachments:
           - octavia
     '
-EOF
-$SSH_CMD DATAPLANE_TOTAL_NODES=1 DATAPLANE_TIMEOUT=40m cd install_yamls && make edpm_wait_deploy || true
 
-$SSH_CMD << 'EOF'
+make edpm_wait_deploy || true
+
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
 
 # Install NFS server, until I can easily deploy Ceph
@@ -115,6 +126,15 @@ spec:
           resources: {}
     '
 EOF
+set -e
+scp /tmp/rhoso.sh $REMOTE_USER@$REMOTE_SERVER:~/rhoso.sh
+$SSH_CMD "bash ~/rhoso.sh |& tee -a ~/rhoso.log"
+
+# If you're not me, you don't want to go through the next steps.
+if [ "$USER" != "emilien" ]; then
+  echo "DONE..."
+  exit 0
+fi
 
 scp $REMOTE_USER@$REMOTE_SERVER:/tmp/rhoso.crt ~/.config/openstack/rhoso.crt
 
