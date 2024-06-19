@@ -148,13 +148,14 @@ openstack security group create allow_ping --project shiftstack
 openstack security group rule create --protocol icmp --project shiftstack allow_ping
 openstack security group rule create --protocol ipv6-icmp --project shiftstack allow_ping
 
-openstack image show centos9-stream || wget https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 && openstack image create --public --disk-format qcow2 --file CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 centos9-stream && rm -f CentOS-Stream-*
-
-openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.29.5.img ubuntu-2204-kube-v1.29.5
-openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.28.5.img ubuntu-2204-kube-v1.28.5
-openstack image create --disk-format raw --file ~/capo/cirros-0.6.1-x86_64-disk.img cirros-0.6.1-x86_64-disk
+# openstack image show centos9-stream || wget https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 && openstack image create --public --disk-format qcow2 --file CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 centos9-stream && rm -f CentOS-Stream-*
 
 export OS_CLOUD=rhoso_shiftstack
+
+openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.29.5.img ubuntu-2204-kube-v1.29.5
+#openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.28.5.img ubuntu-2204-kube-v1.28.5
+#openstack image create --disk-format raw --file ~/capo/cirros-0.6.1-x86_64-disk.img cirros-0.6.1-x86_64-disk
+
 openstack keypair show emacchi || openstack keypair create --public-key ~/.ssh/id_rsa.pub emacchi
 
 echo
