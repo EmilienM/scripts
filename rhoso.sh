@@ -69,8 +69,6 @@ oc patch -n openstack openstackcontrolplane openstack-galera-network-isolation -
 spec:
   horizon:
     enabled: true
-  telemetry:
-    enabled: false
   ovn:
     template:
       ovnController:
