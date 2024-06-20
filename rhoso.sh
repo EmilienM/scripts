@@ -133,6 +133,7 @@ spec:
 EOL
 scp /tmp/rhoso.sh $REMOTE_USER@$REMOTE_SERVER:~/rhoso.sh
 $SSH_CMD "bash ~/rhoso.sh |& tee -a ~/rhoso.log"
+scp $REMOTE_USER@$REMOTE_SERVER:~/.kube/config /tmp/crc-kubeconfig
 
 # If you're not me, you don't want to go through the next steps.
 if [ "$USER" != "emilien" ]; then
