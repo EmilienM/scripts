@@ -35,14 +35,14 @@ $SSH_CMD "rm -rf install_yamls && git clone https://github.com/openstack-k8s-ope
 
 # Workaround for the timeout
 # https://github.com/openstack-k8s-operators/install_yamls/pull/853
-$SSH_CMD "bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/858.patch | git apply -v'"
+$SSH_CMD "bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v; curl https://github.com/openstack-k8s-operators/install_yamls/commit/75f98e63f7437192f45abdc2b02bb0e1e0a0fce4.patch | git apply -v'"
 
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
 
 # sshuttle to access the remote networks
-pkill sshuttle || true
-sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
+#pkill sshuttle || true
+#sshuttle -D -r $REMOTE_USER@$REMOTE_SERVER 192.168.122.0/24 192.168.130.0/24
 
 # Create the RHOSO deployment script that will be executed on the remote server
 cat >/tmp/rhoso.sh <<'EOL'
@@ -93,9 +93,6 @@ spec:
 
 DATAPLANE_TIMEOUT=45m make edpm_wait_deploy || true
 
-# I don't know why I have to do this but otherwise pods lost connectivity with outside
-sudo iptables -t nat -A POSTROUTING -j MASQUERADE
-
 oc get secrets rootca-public -n openstack -o yaml | grep ca.crt | awk '{print $2}' | base64 --decode > /tmp/rhoso.crt
 
 # Install NFS server, until I can easily deploy Ceph
@@ -104,6 +101,8 @@ sudo mkdir /opt/cinder_nfs
 echo "/opt/cinder_nfs 192.168.0.0/16(rw,no_root_squash)" | sudo tee -a /etc/exports
 sudo systemctl enable --now rpcbind nfs-server
 sudo systemctl stop firewalld
+# I don't know why I have to do this but otherwise pods lost connectivity with outside
+sudo iptables -t nat -A POSTROUTING -j MASQUERADE
 sudo dnf install -y wget
 wget https://raw.githubusercontent.com/openstack-k8s-operators/cinder-operator/main/config/samples/backends/nfs/cinder-volume-nfs-secrets.yaml -O /tmp/cinder-volume-nfs-secrets.yaml
 NFS_HOST=$(hostname)
