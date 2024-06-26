@@ -33,10 +33,6 @@ $SSH_CMD "sudo dnf install -y https://github.com/derailed/k9s/releases/latest/do
 # Clone install_yamls
 $SSH_CMD "rm -rf install_yamls && git clone https://github.com/openstack-k8s-operators/install_yamls.git"
 
-# Workaround for the timeout
-# https://github.com/openstack-k8s-operators/install_yamls/pull/853
-$SSH_CMD "bash -c 'cd install_yamls; curl https://patch-diff.githubusercontent.com/raw/openstack-k8s-operators/install_yamls/pull/853.patch | git apply -v; curl https://github.com/openstack-k8s-operators/install_yamls/commit/75f98e63f7437192f45abdc2b02bb0e1e0a0fce4.patch | git apply -v'"
-
 # Copy the secret file
 scp ~/.ocp-pull-secret.txt $REMOTE_USER@$REMOTE_SERVER:install_yamls/devsetup/pull-secret.txt
 
@@ -51,7 +47,7 @@ set -euo pipefail
 
 cd ~/install_yamls/devsetup
 make download_tools
-CPUS=12 MEMORY=25600 DISK=100 make crc
+CPUS=16 MEMORY=32768 DISK=100 make crc
 eval $(crc oc-env)
 oc login -u kubeadmin -p 12345678 https://api.crc.testing:6443
 echo 'export PATH="/home/stack/.crc/bin/oc:$PATH"' >> ~/.bashrc
