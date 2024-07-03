@@ -26,7 +26,7 @@ SSH_CMD="ssh -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $REM
 $SSH_CMD "sudo dnf config-manager --set-enabled crb && sudo dnf install -y epel-release epel-next-release"
 
 # Install base packages for our needs
-$SSH_CMD "sudo dnf install -y ansible make python-pip"
+$SSH_CMD "sudo dnf install -y ansible make python-pip htop"
 
 $SSH_CMD "sudo dnf install -y https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.rpm"
 
@@ -172,6 +172,7 @@ openstack security group rule create --protocol ipv6-icmp --project shiftstack a
 
 export OS_CLOUD=rhoso_shiftstack
 
+openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.30.1.img ubuntu-2204-kube-v1.30.1
 openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.29.5.img ubuntu-2204-kube-v1.29.5
 #openstack image create --disk-format raw --file ~/capo/ubuntu-2204-kube-v1.28.5.img ubuntu-2204-kube-v1.28.5
 #openstack image create --disk-format raw --file ~/capo/cirros-0.6.1-x86_64-disk.img cirros-0.6.1-x86_64-disk

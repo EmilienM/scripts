@@ -10,7 +10,7 @@ export CAPO_DIRECTORY=~/go/src/github.com/kubernetes-sigs/cluster-api-provider-o
 export CONTROL_PLANE_MACHINE_COUNT=3
 export WORKER_MACHINE_COUNT=3
 
-export OPENSTACK_SSH_KEY_NAME="default_key"
+export OPENSTACK_SSH_KEY_NAME="emacchi"
 export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_NODE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_FAILURE_DOMAIN="nova"
