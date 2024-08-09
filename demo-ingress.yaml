@@ -1,0 +1,36 @@
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: hello-openshift
+  creationTimestamp: 
+  namespace: hello-openshift
+  labels:
+    name: hello-openshift
+spec:
+  containers:
+  - name: hello-openshift
+    image: openshift/hello-openshift
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    resources: {}
+    volumeMounts:
+    - name: tmp
+      mountPath: "/tmp"
+    terminationMessagePath: "/dev/termination-log"
+    imagePullPolicy: IfNotPresent
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities: {'drop': ['all']}
+      privileged: false
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+  volumes:
+  - name: tmp
+    emptyDir: {}
+  restartPolicy: Always
+  dnsPolicy: ClusterFirst
+  serviceAccount: ''
+status: {}
