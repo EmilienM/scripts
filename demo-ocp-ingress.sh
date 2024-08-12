@@ -7,7 +7,11 @@ sleep 5
 echo
 echo
 echo "curl http://hello-openshift-hello-openshift.apps.emacchi-hcp.shiftstack-dev.devcluster.openshift.com"
-curl http://hello-openshift-hello-openshift.apps.emacchi-hcp.shiftstack-dev.devcluster.openshift.com/
+curl -I http://hello-openshift-hello-openshift.apps.emacchi-hcp.shiftstack-dev.devcluster.openshift.com/
+echo
+echo
+curl  http://hello-openshift-hello-openshift.apps.emacchi-hcp.shiftstack-dev.devcluster.openshift.com/
+echo
 echo
 echo "Deleting..."
 oc delete ns/hello-openshift
