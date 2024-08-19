@@ -3,7 +3,7 @@ set -e
 
 tmp_dir=$(mktemp -d)
 
-export OS_CLOUD=rhoso_shiftstack
+export OS_CLOUD=beaker_openshift
 export CLUSTER_NAME="dev-test"
 export KUBERNETES_VERSION="v1.30.1"
 export CAPO_DIRECTORY=~/go/src/github.com/kubernetes-sigs/cluster-api-provider-openstack
@@ -15,10 +15,10 @@ export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_NODE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_FAILURE_DOMAIN="nova"
 export OPENSTACK_IMAGE_NAME="ubuntu-2204-kube-v1.30.1"
-export OPENSTACK_EXTERNAL_NETWORK_NAME="public"
-export OPENSTACK_EXTERNAL_NETWORK_ID=$(openstack network list -f value -c ID -c Name | grep $OPENSTACK_EXTERNAL_NETWORK_NAME | awk '{print $1}')
+export OPENSTACK_EXTERNAL_NETWORK_NAME="hostonly"
+export OPENSTACK_EXTERNAL_NETWORK_ID=$(openstack network show -f value -c id $OPENSTACK_EXTERNAL_NETWORK_NAME | awk '{print $1}')
 export OPENSTACK_CLOUD=${OS_CLOUD}
-export OPENSTACK_DNS_NAMESERVERS="192.168.122.1"
+export OPENSTACK_DNS_NAMESERVERS="1.1.1.1"
 
 if ! command -v docker &> /dev/null
 then
