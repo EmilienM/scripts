@@ -5,8 +5,9 @@ tmp_dir=$(mktemp -d)
 
 export OS_CLOUD=beaker_openshift
 export CLUSTER_NAME="dev-test"
-export KUBERNETES_VERSION="v1.30.1"
+export KUBERNETES_VERSION="v1.28.5"
 export CAPO_DIRECTORY=~/go/src/github.com/kubernetes-sigs/cluster-api-provider-openstack
+export CLUSTER_TOPOLOGY=true
 export CONTROL_PLANE_MACHINE_COUNT=3
 export WORKER_MACHINE_COUNT=3
 
@@ -14,11 +15,16 @@ export OPENSTACK_SSH_KEY_NAME="emacchi"
 export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_NODE_MACHINE_FLAVOR="m1.large"
 export OPENSTACK_FAILURE_DOMAIN="nova"
-export OPENSTACK_IMAGE_NAME="ubuntu-2204-kube-v1.30.1"
+export OPENSTACK_IMAGE_NAME="ubuntu-2204-kube-v1.28.5"
 export OPENSTACK_EXTERNAL_NETWORK_NAME="hostonly"
 export OPENSTACK_EXTERNAL_NETWORK_ID=$(openstack network show -f value -c id $OPENSTACK_EXTERNAL_NETWORK_NAME | awk '{print $1}')
 export OPENSTACK_CLOUD=${OS_CLOUD}
 export OPENSTACK_DNS_NAMESERVERS="1.1.1.1"
+
+export OPENSTACK_CLOUD_PROVIDER_CONF_B64=$(cat ~/capo/cloud.conf|envsubst|base64 -w0)
+
+#### Prepare environment files
+source $CAPO_DIRECTORY/templates/env.rc ~/.config/openstack/clouds.yaml ${OS_CLOUD}
 
 if ! command -v docker &> /dev/null
 then
@@ -60,9 +66,6 @@ ctlptl delete registry ctlptl-registry || true
 ctlptl create registry ctlptl-registry --port=5000
 ctlptl create cluster kind --registry=ctlptl-registry
 
-#### Prepare environment files
-source $CAPO_DIRECTORY/templates/env.rc ~/.config/openstack/clouds.yaml ${OS_CLOUD}
-
 # Create secret for clouds.yaml
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -84,3 +87,50 @@ cat <<EOF >> ~/go/src/github.com/kubernetes-sigs/cluster-api/tilt-settings.yaml
   OPENSTACK_CLOUD_CACERT_B64: "${OPENSTACK_CLOUD_CACERT_B64}"
   OPENSTACK_CLOUD_YAML_B64: "${OPENSTACK_CLOUD_YAML_B64}"
 EOF
+
+if [ -z "$DEMO" ]; then
+  exit
+fi
+
+read -p "Press Enter to continue" </dev/tty
+clear
+echo "clusterctl init --infrastructure openstack"
+clusterctl init --infrastructure openstack
+
+echo "clusterctl generate cluster $CLUSTER_NAME > ~/capo/demo.yaml"
+read -p "Press Enter to continue" </dev/tty
+
+echo "kubectl apply -f ~/capo/demo.yaml"
+kubecolor apply -f ~/capo/demo.yaml
+read -p "Press Enter to continue" </dev/tty
+
+clear
+
+echo "clusterctl get kubeconfig dev-test > ~/capo/kube.config"
+clusterctl get kubeconfig dev-test > ~/capo/kube.config
+
+echo "curl -L https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml | kubectl --kubeconfig ~/capo/kube.config apply -f -"
+curl -L https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml | kubectl --kubeconfig ~/capo/kube.config apply -f -
+read -p "Press Enter to continue" </dev/tty
+
+echo "kubectl get kubeadmcontrolplane"
+kubecolor get kubeadmcontrolplane
+sleep 5
+
+echo "kubectl --kubeconfig ~/capo/kube.config -n kube-system create secret generic cloud-config --from-file ~/capo/cloud.conf"
+kubecolor --kubeconfig ~/capo/kube.config -n kube-system create secret generic cloud-config --from-file ~/capo/cloud.conf
+
+echo "kubectl apply --kubeconfig ~/capo/kube.config -f https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-roles.yaml"
+kubecolor apply --kubeconfig ~/capo/kube.config -f https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-roles.yaml
+echo "kubectl apply --kubeconfig ~/capo/kube.config -f https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-role-bindings.yaml"
+kubecolor apply --kubeconfig ~/capo/kube.config -f https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-role-bindings.yaml
+echo "kubectl apply --kubeconfig ~/capo/kube.config -f https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml"
+kubecolor apply --kubeconfig ~/capo/kube.config -f https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml
+sleep 10
+
+clear
+
+echo "clusterctl describe cluster dev-test"
+clusterctl describe cluster dev-test
+echo
+echo "The end"

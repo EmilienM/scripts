@@ -87,6 +87,11 @@ function install_ctlptl {
 	go install github.com/tilt-dev/ctlptl/cmd/ctlptl@latest
 }
 
+function gh_extensions {
+	gh extension install github/gh-copilot || true
+	gh extension upgrade gh-copilot
+}
+
 install_oc
 install_bw
 install_clusterctl

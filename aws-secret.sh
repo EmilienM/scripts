@@ -8,7 +8,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: aws-access-key
-  namespace: external-dns-operator
+  namespace: hypershift
 stringData:
     credentials: |-
 $(cat ~/.aws/credentials | sed 's/^/      /')

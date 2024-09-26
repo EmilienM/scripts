@@ -1,4 +1,3 @@
-export KUBECONFIG=/tmp/openstack.kubeconfig
 oc create namespace demo
 oc create deployment demo --image=quay.io/kuryr/demo -n demo
 oc scale deploy/demo --replicas=2 -n demo
@@ -12,4 +11,4 @@ done
 for i in {1..10}; do
   curl $svc_ip
 done
-oc delete ns demo
+#oc delete ns demo
