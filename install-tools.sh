@@ -71,6 +71,15 @@ function install_kubecolor {
 	cd .. && rm -rf kubecolor
 }
 
+function install_kor {
+	git clone https://github.com/yonahd/kor && cd kor
+	latest_tag=$(gh release list | grep -m1 Latest | awk '{print $3}')
+	wget https://github.com/yonahd/kor/releases/download/$latest_tag/kor_Linux_x86_64.tar.gz
+	tar xf kor_Linux_x86_64.tar.gz 
+	mv kor ../out
+	cd .. && rm -rf kor
+}
+
 function install_hwatch {
 	cargo install hwatch
 }
@@ -87,7 +96,7 @@ function install_ctlptl {
 	go install github.com/tilt-dev/ctlptl/cmd/ctlptl@latest
 }
 
-function gh_extensions {
+function install_gh_extensions {
 	gh extension install github/gh-copilot || true
 	gh extension upgrade gh-copilot
 }
@@ -104,6 +113,8 @@ install_kind
 install_envsubst
 install_ctlptl
 install_kubecolor
+install_kor
+install_gh_extensions
 
 chmod +x $TMP_DIR/out/*
 cp $TMP_DIR/out/* ~/.local/bin

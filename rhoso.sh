@@ -16,7 +16,7 @@ if [ "$EUID" -eq 0 ]; then
   exit 1
 fi
 
-REMOTE_SERVER="foch.macchi.pro"
+REMOTE_SERVER="dell-r640-100.bkr.lab.eng.rdu2.dc.redhat.com"
 REMOTE_USER="stack"
 
 # SSH prefix command
