@@ -101,6 +101,18 @@ function install_gh_extensions {
 	gh extension upgrade gh-copilot
 }
 
+function install_hcp {
+	podman run --rm --privileged -it -v \
+	  $PWD:/output docker.io/library/golang:1.22 /bin/bash -c \
+	  'git clone https://github.com/openshift/hypershift.git && \
+	  cd hypershift/ && \
+	  make hypershift product-cli && \
+	  mv bin/hypershift /output/hypershift && \
+	  mv bin/hcp /output/hcp'
+	mv hcp hypershift ../out
+}
+
+install_hcp
 install_oc
 install_bw
 install_clusterctl
