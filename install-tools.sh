@@ -109,7 +109,7 @@ function install_hcp {
 	  make hypershift product-cli && \
 	  mv bin/hypershift /output/hypershift && \
 	  mv bin/hcp /output/hcp'
-	mv hcp hypershift ../out
+	mv hcp hypershift out
 }
 
 install_hcp
