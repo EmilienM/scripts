@@ -7,7 +7,15 @@ echo "TMP_DIR: $TMP_DIR"
 cd $TMP_DIR
 mkdir out
 
-function install_oc {
+function install_oc_install {
+	mkdir oc_install && cd oc_install
+	wget https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-install-linux.tar.gz
+	tar xf openshift-install-linux.tar.gz
+	mv openshift-install ../out/openshift-install-latest
+	cd .. && rm -rf oc_install
+}
+
+function install_oc_client {
 	mkdir oc && cd oc
 	wget https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
 	tar xf openshift-client-linux.tar.gz
@@ -113,7 +121,8 @@ function install_hcp {
 }
 
 install_hcp
-install_oc
+install_oc_client
+install_oc_install
 install_bw
 install_clusterctl
 install_k9s
