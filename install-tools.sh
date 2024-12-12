@@ -38,7 +38,7 @@ function install_clusterctl {
 }
 
 function install_k9s {
-	sudo dnf install -y https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.rpm
+	sudo dnf5 install -y https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.rpm
 }
 
 function install_kustomize {
@@ -55,7 +55,7 @@ function install_kustomize {
 function install_rclone {
 	git clone https://github.com/rclone/rclone && cd rclone
 	latest_tag=$(gh release list | grep -m1 Latest | awk '{print $2}')
-	sudo dnf install -y https://github.com/rclone/rclone/releases/download/$latest_tag/rclone-$latest_tag-linux-amd64.rpm
+	sudo dnf5 install -y https://github.com/rclone/rclone/releases/download/$latest_tag/rclone-$latest_tag-linux-amd64.rpm
 	cd .. && rm -rf rclone
 }
 
