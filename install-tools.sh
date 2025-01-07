@@ -89,6 +89,7 @@ function install_kor {
 }
 
 function install_hwatch {
+	sudo dnf5 install -y cargo
 	cargo install hwatch
 }
 
@@ -105,6 +106,9 @@ function install_ctlptl {
 }
 
 function install_gh_extensions {
+	sudo dnf5 install -y dnf5-plugins
+	sudo dnf5 config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo
+	sudo dnf5 install -y gh --repo gh-cli
 	gh extension install github/gh-copilot || true
 	gh extension upgrade gh-copilot
 }
