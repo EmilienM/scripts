@@ -59,6 +59,15 @@ function install_rclone {
 	cd .. && rm -rf rclone
 }
 
+function install_kuttl {
+	git clone https://github.com/kudobuilder/kuttl && cd kuttl
+	latest_tag=$(gh release list | grep -m1 Latest | awk '{print $3}')
+	fileversion=$(echo $latest_tag | cut -c 2-)
+	wget https://github.com/kudobuilder/kuttl/releases/download/$latest_tag/kubectl-kuttl_${fileversion}_linux_x86_64
+	mv kubectl-kuttl_${fileversion}_linux_x86_64 ../out/kuttl
+	cd .. && rm -rf kuttl
+}
+
 function install_tilt {
 	git clone https://github.com/tilt-dev/tilt && cd tilt
 	latest_tag=$(gh release list | grep -m1 Latest | awk '{print $3}')
@@ -136,6 +145,7 @@ install_clusterctl
 install_k9s
 install_kustomize
 install_tilt
+install_kuttl
 install_rclone
 install_hwatch
 install_kind
