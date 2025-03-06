@@ -101,6 +101,10 @@ function install_envsubst {
 	go install github.com/drone/envsubst@latest
 }
 
+function install_code_insiders {
+	sudo dnf install -y https://code.visualstudio.com/sha/download?build=insider&os=linux-rpm-x64
+}
+
 function install_ctlptl {
 	go install github.com/tilt-dev/ctlptl/cmd/ctlptl@latest
 }
@@ -140,6 +144,7 @@ install_ctlptl
 install_kubecolor
 install_kor
 install_gh_extensions
+install_code_insiders
 
 chmod +x $TMP_DIR/out/*
 cp $TMP_DIR/out/* ~/.local/bin
