@@ -111,7 +111,7 @@ function install_envsubst {
 }
 
 function install_code_insiders {
-	sudo dnf install -y https://code.visualstudio.com/sha/download?build=insider&os=linux-rpm-x64
+	sudo dnf install -y "https://code.visualstudio.com/sha/download?build=insider&os=linux-rpm-x64"
 }
 
 function install_ctlptl {
@@ -137,12 +137,20 @@ function install_hcp {
 	mv hcp hypershift out
 }
 
+function install_omc {
+	mkdir omc && cd omc
+	curl -sL https://github.com/gmeghnag/omc/releases/latest/download/omc_Linux_x86_64.tar.gz | tar xzf - omc
+	mv omc ../out
+	cd .. && rm -rf omc
+}
+
 install_hcp
 install_oc_client
 install_oc_install
 install_bw
 install_clusterctl
 install_k9s
+install_omc
 install_kustomize
 install_tilt
 install_kuttl
