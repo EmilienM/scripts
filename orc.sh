@@ -36,3 +36,7 @@ ctlptl delete registry ctlptl-registry || true
 
 ctlptl create registry ctlptl-registry --port=5000
 ctlptl create cluster kind --registry=ctlptl-registry
+
+cd ~/git/github.com/k-orc/openstack-resource-controller
+kubectl apply -k config/crd --server-side
+go run ./cmd/manager -zap-log-level 5
